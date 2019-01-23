@@ -1,95 +1,143 @@
 import acm.program.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Scanner;
 
-public class Poker extends ConsoleProgram
+public class Poker2 extends ConsoleProgram
 {
   
   Scanner scanner = new Scanner(System.in);
-  int card1n, card2n, cpu1n;
-  String card1s, card2s, cpu1s, cpu2s;
-  int userMoney = 1000;
-  int cpuMoney = 1000;
-  int[] main = new int[2];
+  HashMap<Integer, Hand> used = new HashMap<Integer, Hand>();
+  Integer userMoney = 1000;
+  Hand user1, user2, cpu1, cpu2;
+  Integer pot = 0;
+  Integer cpuMoney = 1000;
   
   public void run() {
-    main[1] = userMoney;
-    System.out.println("Welcome!");
     while(true) {
       while(true) {
-        card1n = getNum();
-        checkNum(card1n);
-        card1s = getSuit();
-        card2s = getSuit();
-        card2n= getNum();
+        System.out.println("Game Begins");
         
-        System.out.print("your cards are: " + card1n + " of " + card1s + " and " + card2n + " of " + card2s);
-        System.out.println("\nDo you check, raise, or fold? (Type c, r, f respectively)");
-        int[] pf = preflop();
-        if(pf[0] == 1) {
+        user1 = getNum();
+        user2 = getNum();
+        cpu1 = getNum();
+        cpu2 = getNum();
+        cpuMoney -= 10;
+        userMoney -= 10;
+        pot = 20;
+        System.out.println("You currently have " + userMoney);
+        System.out.println("Your hands are " + user1+" and "+user2);
+        int cpu = decide();
+        if(cpu == 1) {
+          System.out.println("CPU folds");
           break;
         }
-        System.out.println("You have " + pf[1] + " left.");
+        Hand flop1 = getNum();
+        Hand flop2 = getNum();
+        Hand flop3 = getNum();
+        System.out.println("Flops are " + flop1 + ", " + flop2 + " and " + flop3);
+        cpu = decide();
+        if(cpu == 1) {
+          System.out.println("CPU folds");
+          break;
+        }
+        Hand turn = getNum();
+        System.out.println("Turn is " + turn);
+        cpu = decide();
+        if(cpu == 1) {
+          System.out.println("CPU folds");
+          break;
+        }
+        Hand river = getNum();
+        System.out.println("River is " + river);
+        cpu = decide();
+        if(cpu == 1) {
+          break;
+        }
+        System.out.println("CPU has " + cpu1 + " and " + cpu2);
+        System.out.println("Did you win? (Type y or no)");
+        String yes = scanner.nextLine();
+        if(yes.charAt(0) == 'y') {
+          userMoney += pot;
+          System.out.println("Congradulations, you won " + pot + "\nYou now have " + userMoney);
+          break;
+        }
+      }
+      System.out.println("Playagain? (Type y or n)");
+      String no = scanner.nextLine();
+      if(no.charAt(0) == 'n') break;
+    }
+    
+  }
+  
+  public int decide() {
+    while(true) {
+      System.out.println("Do you bet or check (Type b or c)");
+      String input = scanner.nextLine();
+      if(input.charAt(0) == 'b') {
+        System.out.println("How much do you want to bet?");
+        int in = scanner.nextInt();
+        userMoney -= in;
+        pot += in;
+        System.out.println("You bet " + in + "\nYou have " + userMoney + " left");
+        int cpuChoice = cpuReaction(in);
+        return cpuChoice;
+      }
+      else if(input.charAt(0) == 'c') {
+        return 0;
+      }
+      else {
+        System.out.println("Type either b or c");
       }
     }
     
   }
   
-  public void checkNum(int num) {
-    if(num == 1) {
-      
-    }
-  }
-  
-  public int[] preflop() {
-    String input = scanner.nextLine();
-    char in = input.charAt(0);
-    while(true) {
-      if(in == 'c') {
-        System.out.println("Checked\nMoney Left: " + userMoney);
-        break;
-      }
-      else if(in == 'r') {
-        System.out.println("Raise");
-        System.out.println("How much do you raise? (Type an interger)");
-        int inputInt = scanner.nextInt();
-        System.out.println("You raised " + inputInt);
-        userMoney -= inputInt;
-        main[1] = userMoney;
-        break;
-      }
-      else if(in == 'f') {
-        System.out.println("You fold");
-        main[0] = 1;
+  public int cpuReaction(int size) {
+    if(cpu1.getNumber() + cpu2.getNumber() >= 18) {
+      int prob = (int)(Math.random() * 10);
+      if(prob >= 8) {
+        System.out.println("Cpu calls");
+        pot += size;
+        return 0;
       }
       else {
-        System.out.println("Type one of the following: c, r or f");
+        System.out.println("Cpu folds");
+        return 1;
       }
-      
     }
-    main[0] = 0;
-    return main;
+    else {
+      pot += size;
+      return 0;
+    }
   }
   
-  public int getNum() {
-    int tmp = (int)(Math.random()*11 + 1);
-    while(tmp == card1n && card2s == card1s) {
-      tmp = (int)(Math.random()*11 + 1);
+  public Hand getNum() {
+    String suit;
+    int tmp;
+    int num = (int)(Math.random()*52 + 1);
+    
+    while(used.containsKey(num)) {
+      num = (int)(Math.random()*52) + 1;
     }
-    return tmp;
+    
+    if(num < 14) {
+      suit = "Heats";
+    }
+    else if(14 <= num && num < 27) {
+      suit = "Spades";
+    }
+    else if(27 <= num && num < 40) {
+      suit = "Diamonds";
+    }
+    else suit = "Clubs";
+    
+    tmp = num % 13 + 1;
+    
+    Hand h = new Hand(tmp, suit);
+    used.put(num, h);
+    return h;
   }
   
-  public String getSuit() {
-    int tmp = (int)(Math.random()*4 + 1);
-    if(tmp == 1) {
-      return "Hearts";
-    }
-    else if(tmp == 2) {
-      return "Spades";
-    }
-    else if(tmp == 3) {
-      return "Clubs";
-    }
-    else return "Diamonds";
-  }
-  
+
 }
